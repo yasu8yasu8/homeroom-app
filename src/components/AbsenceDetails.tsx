@@ -57,94 +57,98 @@ const AbsenceDetails: React.FC<AbsenceDetailsProps> = ({ attendanceData }) => {
     }
   };
 
-  if (absentStudents.length === 0) {
-    return null;
-  }
-
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h6" gutterBottom sx={{ fontSize: '1.3rem', fontWeight: 600, mb: 2 }}>
         欠席理由の入力
       </Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <StyledTableCell width="40%">名前</StyledTableCell>
-              <StyledTableCell width="60%">欠席理由</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {absentStudents.map((student) => (
-              <TableRow 
-                key={student.id}
-                sx={{
-                  backgroundColor: absenceReasons[student.id] === '連絡なし' ? 'error.light' : 'inherit',
-                  '&:hover': {
-                    backgroundColor: absenceReasons[student.id] === '連絡なし' ? 'error.main' : 'action.hover',
-                  }
-                }}
-              >
-                <StyledTableCell sx={{ fontWeight: 500 }}>
-                  {student.name}
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant={absenceReasons[student.id] === '病気' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '病気')}
-                      color="warning"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      病気
-                    </Button>
-                    <Button
-                      variant={absenceReasons[student.id] === '事故' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '事故')}
-                      color="secondary"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      事故
-                    </Button>
-                    <Button
-                      variant={absenceReasons[student.id] === '連絡なし' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '連絡なし')}
-                      color="error"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      連絡なし
-                    </Button>
-                    <Button
-                      variant={absenceReasons[student.id] === 'その他' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, 'その他')}
-                      color="info"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      その他
-                    </Button>
-                  </Stack>
-                </StyledTableCell>
+      {absentStudents.length === 0 ? (
+        <Paper sx={{ p: 3, backgroundColor: 'grey.100' }}>
+          <Typography variant="h6" align="center" sx={{ color: 'text.secondary' }}>
+            該当者はいません
+          </Typography>
+        </Paper>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell width="40%">名前</StyledTableCell>
+                <StyledTableCell width="60%">欠席理由</StyledTableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {absentStudents.map((student) => (
+                <TableRow 
+                  key={student.id}
+                  sx={{
+                    backgroundColor: absenceReasons[student.id] === '連絡なし' ? 'error.light' : 'inherit',
+                    '&:hover': {
+                      backgroundColor: absenceReasons[student.id] === '連絡なし' ? 'error.main' : 'action.hover',
+                    }
+                  }}
+                >
+                  <StyledTableCell sx={{ fontWeight: 500 }}>
+                    {student.name}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant={absenceReasons[student.id] === '病気' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '病気')}
+                        color="warning"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        病気
+                      </Button>
+                      <Button
+                        variant={absenceReasons[student.id] === '事故' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '事故')}
+                        color="secondary"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        事故
+                      </Button>
+                      <Button
+                        variant={absenceReasons[student.id] === '連絡なし' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '連絡なし')}
+                        color="error"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        連絡なし
+                      </Button>
+                      <Button
+                        variant={absenceReasons[student.id] === 'その他' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, 'その他')}
+                        color="info"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        その他
+                      </Button>
+                    </Stack>
+                  </StyledTableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Box>
   );
 };

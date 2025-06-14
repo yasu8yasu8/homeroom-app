@@ -10,6 +10,7 @@ import ClassSelection from './components/ClassSelection';
 import AttendanceList from './components/AttendanceList';
 import AbsenceDetails from './components/AbsenceDetails';
 import OtherDetails from './components/OtherDetails';
+import AttendanceStats from './components/AttendanceStats';
 
 const theme = createTheme({
   palette: {
@@ -105,30 +106,61 @@ interface Student {
 function App() {
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
   const [selectedTeacher, setSelectedTeacher] = useState('');
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState<string>('');
   const [showAttendanceList, setShowAttendanceList] = useState(false);
   const [attendanceData, setAttendanceData] = useState<Student[]>([]);
   const [savedAttendance, setSavedAttendance] = useState(false);
+  const [isAttendanceSaved, setIsAttendanceSaved] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   const handleTeacherChange = (teacher: string) => {
     setSelectedTeacher(teacher);
+    setSelectedClass('');
     setShowAttendanceList(false);
     setSavedAttendance(false);
+    setAttendanceData([]);
+    setIsAttendanceSaved(false);
+    setShowStats(false);
   };
 
   const handleClassChange = (className: string) => {
     setSelectedClass(className);
     setShowAttendanceList(true);
     setSavedAttendance(false);
+    setAttendanceData([]);
+    setIsAttendanceSaved(false);
+    setShowStats(false);
   };
 
-  const handleSaveAttendance = (data: Student[]) => {
-    setAttendanceData(data);
+  const handleSaveAttendance = (students: Student[]) => {
+    const updatedStudents = students.map(newStudent => {
+      const existingStudent = attendanceData.find(s => s.id === newStudent.id);
+      if (existingStudent && newStudent.status === 'other') {
+        return {
+          ...newStudent,
+          otherReason: existingStudent.otherReason,
+          familyMember: existingStudent.familyMember,
+          illnessType: existingStudent.illnessType
+        };
+      }
+      return newStudent;
+    });
+
+    setAttendanceData(updatedStudents);
     setSavedAttendance(true);
+    setIsAttendanceSaved(true);
+    setShowStats(false);
+  };
+
+  const handleEditAttendance = () => {
+    setIsAttendanceSaved(false);
+    setShowStats(false);
   };
 
   const handleFinalSubmit = (isComplete: boolean) => {
-    // 必要に応じて処理を追加
+    if (isComplete) {
+      setShowStats(true);
+    }
   };
 
   return (
@@ -204,7 +236,9 @@ function App() {
             {showAttendanceList && (
               <AttendanceList 
                 className={selectedClass} 
-                onSave={handleSaveAttendance} 
+                onSave={handleSaveAttendance}
+                isSaved={isAttendanceSaved}
+                onEdit={handleEditAttendance}
               />
             )}
             
@@ -217,6 +251,11 @@ function App() {
                   attendanceData={attendanceData}
                   onSubmit={handleFinalSubmit}
                 />
+                {showStats && (
+                  <Box sx={{ mt: 3 }}>
+                    <AttendanceStats attendanceData={attendanceData} />
+                  </Box>
+                )}
               </Paper>
             )}
           </Container>

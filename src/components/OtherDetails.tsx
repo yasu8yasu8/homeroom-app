@@ -18,13 +18,11 @@ import {
   DialogContentText,
   DialogActions,
   Collapse,
-  SelectChangeEvent,
   Stack,
   styled
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import AttendanceStats from './AttendanceStats';
 
 interface Student {
   id: number;
@@ -75,42 +73,35 @@ const OtherDetails: React.FC<OtherDetailsProps> = ({ attendanceData, onSubmit })
   const [illnessTypes, setIllnessTypes] = useState<{ [key: number]: string }>({});
   const [showDialog, setShowDialog] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
-  const [showStats, setShowStats] = useState(false);
-  const [updatedAttendanceData, setUpdatedAttendanceData] = useState<Student[]>(
-    attendanceData.map(student => {
+  const [updatedAttendanceData, setUpdatedAttendanceData] = useState<Student[]>([]);
+
+  // attendanceDataが変更されたときに状態を更新
+  useEffect(() => {
+    const initialOtherReasons: { [key: number]: string } = {};
+    const initialFamilyMembers: { [key: number]: string } = {};
+    const initialIllnessTypes: { [key: number]: string } = {};
+
+    const updatedData = attendanceData.map(student => {
       if (student.status === 'other') {
+        initialOtherReasons[student.id] = student.otherReason || '公欠';
+        if (student.otherReason === '忌引') {
+          initialFamilyMembers[student.id] = student.familyMember || '';
+        }
+        if (student.otherReason === '出停') {
+          initialIllnessTypes[student.id] = student.illnessType || '';
+        }
         return { ...student, otherReason: student.otherReason || '公欠' };
       }
       return student;
-    })
-  );
-
-  const otherStudents = updatedAttendanceData.filter(student => student.status === 'other');
-
-  useEffect(() => {
-    const initialOtherReasons = otherStudents.reduce((acc, student) => {
-      acc[student.id] = student.otherReason || '公欠';
-      return acc;
-    }, {} as { [key: number]: string });
-
-    const initialFamilyMembers = otherStudents.reduce((acc, student) => {
-      if (student.otherReason === '忌引') {
-        acc[student.id] = student.familyMember || '';
-      }
-      return acc;
-    }, {} as { [key: number]: string });
-
-    const initialIllnessTypes = otherStudents.reduce((acc, student) => {
-      if (student.otherReason === '出停') {
-        acc[student.id] = student.illnessType || '';
-      }
-      return acc;
-    }, {} as { [key: number]: string });
+    });
 
     setOtherReasons(initialOtherReasons);
     setFamilyMembers(initialFamilyMembers);
     setIllnessTypes(initialIllnessTypes);
-  }, [otherStudents]);
+    setUpdatedAttendanceData(updatedData);
+  }, [attendanceData]);
+
+  const otherStudents = updatedAttendanceData.filter(student => student.status === 'other');
 
   const handleReasonChange = (studentId: number, reason: string) => {
     setOtherReasons(prev => ({
@@ -123,9 +114,7 @@ const OtherDetails: React.FC<OtherDetailsProps> = ({ attendanceData, onSubmit })
         student.id === studentId 
           ? { 
               ...student, 
-              otherReason: reason, 
-              status: 'other',
-              absenceReason: undefined,
+              otherReason: reason,
               familyMember: undefined,
               illnessType: undefined
             }
@@ -199,133 +188,137 @@ const OtherDetails: React.FC<OtherDetailsProps> = ({ attendanceData, onSubmit })
   const handleCloseDialog = () => {
     setShowDialog(false);
     if (isComplete) {
-      setShowStats(true);
+      onSubmit(true);
     }
   };
-
-  if (otherStudents.length === 0) {
-    return null;
-  }
 
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="h6" gutterBottom sx={{ fontSize: '1.3rem', fontWeight: 600, mb: 2 }}>
         その他の詳細
       </Typography>
-      <TableContainer 
-        component={Paper}
-        sx={{
-          '& .MuiTable-root': {
-            borderCollapse: 'separate',
-            borderSpacing: '0 4px',
-          }
-        }}
-      >
-        <Table>
-          <TableHead>
-            <TableRow>
-              <StyledTableCell width="25%">名前</StyledTableCell>
-              <StyledTableCell width="35%">理由</StyledTableCell>
-              <StyledTableCell width="40%">詳細</StyledTableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {otherStudents.map((student) => (
-              <TableRow key={student.id}>
-                <StyledTableCell className="name-cell">
-                  {student.name}
-                </StyledTableCell>
-                <StyledTableCell>
-                  <Stack direction="row" spacing={2}>
-                    <Button
-                      variant={otherReasons[student.id] === '公欠' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '公欠')}
-                      color="primary"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      公欠
-                    </Button>
-                    <Button
-                      variant={otherReasons[student.id] === '忌引' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '忌引')}
-                      color="secondary"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      忌引
-                    </Button>
-                    <Button
-                      variant={otherReasons[student.id] === '出停' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, '出停')}
-                      color="error"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      出停
-                    </Button>
-                    <Button
-                      variant={otherReasons[student.id] === 'それ以外' ? 'contained' : 'outlined'}
-                      onClick={() => handleReasonChange(student.id, 'それ以外')}
-                      color="warning"
-                      sx={{
-                        minWidth: '100px',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      それ以外
-                    </Button>
-                  </Stack>
-                </StyledTableCell>
-                <StyledTableCell>
-                  {otherReasons[student.id] === '忌引' && (
-                    <FormControl fullWidth>
-                      <StyledSelect
-                        value={familyMembers[student.id] || ''}
-                        onChange={(e) => handleFamilyMemberChange(student.id, e.target.value as string)}
-                        size="medium"
-                      >
-                        <MenuItem value="父親">父親</MenuItem>
-                        <MenuItem value="母親">母親</MenuItem>
-                        <MenuItem value="兄弟姉妹">兄弟姉妹</MenuItem>
-                        <MenuItem value="祖父">祖父</MenuItem>
-                        <MenuItem value="祖母">祖母</MenuItem>
-                        <MenuItem value="義父">義父</MenuItem>
-                        <MenuItem value="義母">義母</MenuItem>
-                        <MenuItem value="その他">その他</MenuItem>
-                      </StyledSelect>
-                    </FormControl>
-                  )}
-                  {otherReasons[student.id] === '出停' && (
-                    <FormControl fullWidth>
-                      <StyledSelect
-                        value={illnessTypes[student.id] || ''}
-                        onChange={(e) => handleIllnessTypeChange(student.id, e.target.value as string)}
-                        size="medium"
-                      >
-                        <MenuItem value="インフルエンザ">インフルエンザ</MenuItem>
-                        <MenuItem value="コロナ">コロナ</MenuItem>
-                        <MenuItem value="その他感染症">その他感染症</MenuItem>
-                        <MenuItem value="その他">その他</MenuItem>
-                      </StyledSelect>
-                    </FormControl>
-                  )}
-                </StyledTableCell>
+      {otherStudents.length === 0 ? (
+        <Paper sx={{ p: 3, backgroundColor: 'grey.100' }}>
+          <Typography variant="h6" align="center" sx={{ color: 'text.secondary' }}>
+            該当者はいません
+          </Typography>
+        </Paper>
+      ) : (
+        <TableContainer 
+          component={Paper}
+          sx={{
+            '& .MuiTable-root': {
+              borderCollapse: 'separate',
+              borderSpacing: '0 4px',
+            }
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell width="25%">名前</StyledTableCell>
+                <StyledTableCell width="35%">理由</StyledTableCell>
+                <StyledTableCell width="40%">詳細</StyledTableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {otherStudents.map((student) => (
+                <TableRow key={student.id}>
+                  <StyledTableCell className="name-cell">
+                    {student.name}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Stack direction="row" spacing={2}>
+                      <Button
+                        variant={otherReasons[student.id] === '公欠' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '公欠')}
+                        color="primary"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        公欠
+                      </Button>
+                      <Button
+                        variant={otherReasons[student.id] === '忌引' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '忌引')}
+                        color="secondary"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        忌引
+                      </Button>
+                      <Button
+                        variant={otherReasons[student.id] === '出停' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, '出停')}
+                        color="error"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        出停
+                      </Button>
+                      <Button
+                        variant={otherReasons[student.id] === 'それ以外' ? 'contained' : 'outlined'}
+                        onClick={() => handleReasonChange(student.id, 'それ以外')}
+                        color="warning"
+                        sx={{
+                          minWidth: '100px',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        それ以外
+                      </Button>
+                    </Stack>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {otherReasons[student.id] === '忌引' && (
+                      <FormControl fullWidth>
+                        <StyledSelect
+                          value={familyMembers[student.id] || ''}
+                          onChange={(e) => handleFamilyMemberChange(student.id, e.target.value as string)}
+                          size="medium"
+                        >
+                          <MenuItem value="父親">父親</MenuItem>
+                          <MenuItem value="母親">母親</MenuItem>
+                          <MenuItem value="兄弟姉妹">兄弟姉妹</MenuItem>
+                          <MenuItem value="祖父">祖父</MenuItem>
+                          <MenuItem value="祖母">祖母</MenuItem>
+                          <MenuItem value="義父">義父</MenuItem>
+                          <MenuItem value="義母">義母</MenuItem>
+                          <MenuItem value="その他">その他</MenuItem>
+                        </StyledSelect>
+                      </FormControl>
+                    )}
+                    {otherReasons[student.id] === '出停' && (
+                      <FormControl fullWidth>
+                        <StyledSelect
+                          value={illnessTypes[student.id] || ''}
+                          onChange={(e) => handleIllnessTypeChange(student.id, e.target.value as string)}
+                          size="medium"
+                        >
+                          <MenuItem value="インフルエンザ">インフルエンザ</MenuItem>
+                          <MenuItem value="コロナ">コロナ</MenuItem>
+                          <MenuItem value="その他感染症">その他感染症</MenuItem>
+                          <MenuItem value="その他">その他</MenuItem>
+                        </StyledSelect>
+                      </FormControl>
+                    )}
+                  </StyledTableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
         <Button
@@ -427,12 +420,6 @@ const OtherDetails: React.FC<OtherDetailsProps> = ({ attendanceData, onSubmit })
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Collapse in={showStats}>
-        <Box sx={{ mt: 3 }}>
-          <AttendanceStats attendanceData={updatedAttendanceData} />
-        </Box>
-      </Collapse>
     </Box>
   );
 };

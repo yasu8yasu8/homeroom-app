@@ -10,7 +10,6 @@ import {
   TableRow,
   Paper,
   Button,
-  ButtonGroup,
   Stack,
   styled
 } from '@mui/material';
@@ -24,7 +23,9 @@ interface Student {
 
 interface AttendanceListProps {
   className: string;
-  onSave: (data: Student[]) => void;
+  onSave: (students: Student[]) => void;
+  isSaved?: boolean;  // 追加：保存済みかどうかを示すプロパティ
+  onEdit?: () => void;  // 追加：修正ボタンのハンドラー
 }
 
 // スタイル付きコンポーネントの定義
@@ -104,33 +105,69 @@ const generateStudents = (className: string): Student[] => {
   }));
 };
 
-const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) => {
+const AttendanceList: React.FC<AttendanceListProps> = ({ 
+  className, 
+  onSave, 
+  isSaved = false,
+  onEdit 
+}) => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [displayStudents, setDisplayStudents] = useState<Student[]>([]); // 追加：表示用の状態
 
   useEffect(() => {
-    setStudents(generateStudents(className));
+    const initialStudents = generateStudents(className);
+    setStudents(initialStudents);
+    setDisplayStudents(initialStudents);
   }, [className]);
 
   const handleStatusChange = (studentId: number, newStatus: string) => {
-    setStudents(prev =>
-      prev.map(student =>
-        student.id === studentId
-          ? {
-              ...student,
-              status: newStatus,
-              absenceReason: newStatus === 'absent' ? '連絡なし' : undefined
-            }
-          : student
-      )
+    if (isSaved) return;
+
+    const updatedStudents = students.map(student =>
+      student.id === studentId
+        ? {
+            ...student,
+            status: newStatus,
+            absenceReason: newStatus === 'absent' ? '連絡なし' : undefined
+          }
+        : student
     );
+
+    setStudents(updatedStudents);
+    setDisplayStudents(updatedStudents);
   };
 
   const handleSave = () => {
+    setDisplayStudents([...students]); // 表示用の状態を更新
     onSave(students);
   };
 
+  // 追加：修正ボタンのハンドラー
+  const handleEdit = () => {
+    setStudents([...displayStudents]); // 表示状態を内部データにコピー
+    if (onEdit) {
+      onEdit();
+    }
+  };
+
   return (
-    <Box sx={{ width: '100%', mb: 3 }}>
+    <Box 
+      sx={{ 
+        width: '100%', 
+        mb: 3,
+        position: 'relative',
+        '&::after': isSaved ? {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+          pointerEvents: 'none',
+        } : {}
+      }}
+    >
       <Typography variant="h6" gutterBottom>
         {className} 出欠確認
       </Typography>
@@ -152,7 +189,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
             </TableRow>
           </TableHead>
           <TableBody>
-            {students.map((student) => (
+            {displayStudents.map((student) => (
               <StyledTableRow 
                 key={student.id}
                 className={student.status === 'absent' && student.absenceReason === '連絡なし' ? 'noContact' : ''}
@@ -174,6 +211,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
                       onClick={() => handleStatusChange(student.id, 'present')}
                       size="large"
                       color="success"
+                      disabled={isSaved}
                       sx={{
                         minWidth: '100px',
                         fontSize: '1rem',
@@ -187,6 +225,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
                       onClick={() => handleStatusChange(student.id, 'absent')}
                       size="large"
                       color={student.status === 'absent' && student.absenceReason === '連絡なし' ? 'error' : 'primary'}
+                      disabled={isSaved}
                       sx={{
                         minWidth: '100px',
                         fontSize: '1rem',
@@ -200,6 +239,7 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
                       onClick={() => handleStatusChange(student.id, 'other')}
                       size="large"
                       color="warning"
+                      disabled={isSaved}
                       sx={{
                         minWidth: '300px',
                         fontSize: '1rem',
@@ -221,11 +261,12 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
           </TableBody>
         </Table>
       </TableContainer>
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 2 }}>
         <Button
           variant="contained"
           color="primary"
           onClick={handleSave}
+          disabled={isSaved}
           sx={{ 
             minWidth: 200,
             py: 1.5,
@@ -238,6 +279,24 @@ const AttendanceList: React.FC<AttendanceListProps> = ({ className, onSave }) =>
         >
           保存
         </Button>
+        {isSaved && (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleEdit}
+            sx={{ 
+              minWidth: 200,
+              py: 1.5,
+              fontSize: '1.1rem',
+              boxShadow: 4,
+              '&:hover': {
+                boxShadow: 6,
+              },
+            }}
+          >
+            修正
+          </Button>
+        )}
       </Box>
     </Box>
   );
